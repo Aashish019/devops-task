@@ -48,7 +48,7 @@ Stop it with `docker compose down`.
 On every push (and pull request), `.github/workflows/ci.yml` runs on `ubuntu-latest` and does, in order:
 
 1. **Checkout** the repository.
-2. **Set up Node.js 20**, with npm dependency caching enabled for faster runs.
+2. **Set up Node.js 24**, with npm dependency caching enabled for faster runs.
 3. **Install dependencies** with `npm ci` (uses `package-lock.json` for reproducible, exact installs — faster and safer than `npm install` in CI).
 4. **Run tests** (`npm test`), which runs Jest against `/health` and fails the pipeline if the endpoint doesn't return 200.
 5. **Build the Docker image**, tagged with the commit SHA, to confirm the app is containerizable. (The image isn't pushed anywhere in this exercise — that would be the next logical step, e.g. pushing to Docker Hub / GHCR / ECR on merges to `main`.)
