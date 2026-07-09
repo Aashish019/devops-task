@@ -2,6 +2,21 @@
 
 A minimal Express app, containerized, tested in CI, and run locally via Docker Compose.
 
+## Project structure
+
+```
+.
+├── app.js                       # Express app (with request logging middleware)
+├── app.test.js                  # Jest + Supertest test for /health
+├── package.json
+├── package-lock.json
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── .github/workflows/ci.yml     # CI pipeline
+└── README.md
+```
+
 ## Running locally (without Docker)
 
 ```bash
@@ -69,3 +84,17 @@ Example log line:
 ```
 GET /health 200 - 3.78ms
 ```
+
+This is enough for local debugging but isn't "monitoring" in a production sense — it's just console output.
+
+## Extending this toward real production monitoring
+
+To make this production-grade, I'd add structured (JSON) logging shipped to a log aggregator (e.g. CloudWatch Logs, or the ELK/EFK stack), and expose a `/metrics` endpoint using `prom-client` to track request rate, error rate, and latency percentiles (RED metrics), scraped by **Prometheus** and visualized in **Grafana** — or, if running on AWS, I'd lean on **CloudWatch** metrics/alarms instead of self-hosting Prometheus. I'd also add uptime/health alerting (e.g. via Alertmanager or a simple external uptime check) so failures page someone rather than sitting silently in logs, and track container-level metrics (CPU/memory) via cAdvisor or the cloud provider's built-in container insights.
+
+## Assumptions & trade-offs
+
+- **Base image**: used `node:24-alpine` for a small image size rather than a full Debian/Ubuntu-based Node image. Alpine lacks some tools (like `curl`), which is why the Compose health check uses a small Node one-liner instead.
+- **Non-root**: the Dockerfile uses a multi-stage build and runs the final container as the built-in non-root `node` user (`USER node`), rather than root, for basic image hardening.
+- **No registry push**: the CI pipeline builds the image to validate it, but doesn't push it to a container registry — out of scope for "build/test," but would be the natural next CI/CD step (e.g. push to GHCR on merge to `main`).
+- **Single test**: only one test (`/health` returns 200) as explicitly requested. In a real project I'd add tests for `/` and for error cases.
+- **In-memory app, no persistence**: no database or external state, so no volumes are needed in Compose.
